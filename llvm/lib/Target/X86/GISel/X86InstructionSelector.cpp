@@ -1973,7 +1973,8 @@ X86InstructionSelector::selectAddr(MachineOperand &Root) const {
   MachineRegisterInfo &MRI = MI->getMF()->getRegInfo();
   MachineInstr *Ptr = MRI.getVRegDef(Root.getReg());
   X86AddressMode AM;
-  X86SelectAddress(*Ptr, TM, MRI, STI, AM);
+  if (!X86SelectAddress(*Ptr, TM, MRI, STI, AM))
+    return std::nullopt;
 
   if (AM.IndexReg)
     return std::nullopt;
