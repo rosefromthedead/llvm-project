@@ -224,6 +224,11 @@ addConstantPoolReference(const MachineInstrBuilder &MIB, unsigned CPI,
     .addConstantPoolIndex(CPI, 0, OpFlags).addReg(0);
 }
 
+static inline const MachineInstrBuilder &
+addJumpTableReference(const MachineInstrBuilder &MIB, unsigned JTI) {
+  return MIB.addReg(0).addImm(1).addReg(0).addJumpTableIndex(JTI).addReg(0);
+}
+
 } // end namespace llvm
 
 #endif // LLVM_LIB_TARGET_X86_X86INSTRBUILDER_H

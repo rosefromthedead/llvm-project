@@ -121,6 +121,10 @@ private:
                        MachineFunction &MF) const;
   bool selectSelect(MachineInstr &I, MachineRegisterInfo &MRI,
                     MachineFunction &MF) const;
+  bool selectJumpTable(MachineInstr &I, MachineRegisterInfo &MRI,
+                       MachineFunction &MF) const;
+  bool selectBrJt(MachineInstr &I, MachineRegisterInfo &MRI,
+                  MachineFunction &MF) const;
 
   ComplexRendererFns selectAddr(MachineOperand &Root) const;
 
@@ -491,6 +495,10 @@ bool X86InstructionSelector::select(MachineInstr &I) {
     return selectMulDivRem(I, MRI, MF);
   case TargetOpcode::G_SELECT:
     return selectSelect(I, MRI, MF);
+  case TargetOpcode::G_JUMP_TABLE:
+    return selectJumpTable(I, MRI, MF);
+  case TargetOpcode::G_BRJT:
+    return selectBrJt(I, MRI, MF);
   }
 
   return false;
@@ -1962,6 +1970,49 @@ bool X86InstructionSelector::selectSelect(MachineInstr &I,
   }
 
   Sel.eraseFromParent();
+  return true;
+}
+
+bool X86InstructionSelector::selectJumpTable(MachineInstr &I,
+                                             MachineRegisterInfo &MRI,
+                                             MachineFunction &MF) const {
+  assert(I.getOpcode() == TargetOpcode::G_JUMP_TABLE && "Expected jump table");
+  assert(I.getOperand(1).isJTI() && "Jump table op should have a JTI!");
+
+  Register DestReg = I.getOperand(0).getReg();
+  auto MIB = BuildMI(*I.getParent(), I, I.getDebugLoc(),
+                     TII.get(getLeaOP(MRI.getType(DestReg), STI)), DestReg);
+  addJumpTableReference(MIB, I.getOperand(1).getIndex());
+  constrainSelectedInstRegOperands(*MIB.getInstr(), TII, TRI, RBI);
+
+  I.removeFromParent();
+  return true;
+}
+
+bool X86InstructionSelector::selectBrJt(MachineInstr &I,
+                                        MachineRegisterInfo &MRI,
+                                        MachineFunction &MF) const {
+  unsigned PtrBits = MF.getDataLayout().getPointerSizeInBits();
+  LLT PtrTy = LLT::pointer(0, PtrBits);
+  Register JumpTargetReg = MRI.createGenericVirtualRegister(PtrTy);
+
+  // TODO: fold G_JUMP_TABLE in here. we can calc the whole address in one mov
+  X86AddressMode AM;
+  AM.Base.Reg = I.getOperand(0).getReg();
+  AM.IndexReg = I.getOperand(2).getReg();
+  AM.Scale = PtrBits / 8;
+  auto MovMIB = BuildMI(*I.getParent(), I, I.getDebugLoc(),
+                        TII.get(PtrBits == 64 ? X86::MOV64rm : X86::MOV32rm),
+                        JumpTargetReg);
+  addFullAddress(MovMIB, AM);
+  constrainSelectedInstRegOperands(*MovMIB.getInstr(), TII, TRI, RBI);
+
+  auto JumpMIB = BuildMI(*I.getParent(), I, I.getDebugLoc(),
+                         TII.get(PtrBits == 64 ? X86::JMP64r : X86::JMP32r))
+                     .addReg(JumpTargetReg);
+  constrainSelectedInstRegOperands(*JumpMIB.getInstr(), TII, TRI, RBI);
+
+  I.removeFromParent();
   return true;
 }
 

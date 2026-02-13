@@ -607,6 +607,11 @@ X86LegalizerInfo::X86LegalizerInfo(const X86Subtarget &STI,
       .minScalar(0, LLT::scalar(32))
       .libcall();
 
+  getActionDefinitionsBuilder(G_JUMP_TABLE).legalFor({p0});
+
+  getActionDefinitionsBuilder(G_BRJT).legalFor(
+      {{p0, STI.isTarget64BitLP64() ? s64 : s32}});
+
   getLegacyLegalizerInfo().computeTables();
   verify(*STI.getInstrInfo());
 }
