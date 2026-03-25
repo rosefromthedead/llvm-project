@@ -380,6 +380,9 @@ def pp_nonportable_path : NonportablePath,
   InGroup<DiagGroup<"nonportable-include-path">>;
 def pp_nonportable_system_path : NonportablePath, DefaultIgnore,
   InGroup<DiagGroup<"nonportable-system-include-path">>;
+def pp_nonportable_path_separator : Warning<
+  "non-portable path to file '%0'; specified path contains backslashes">,
+  DefaultIgnore, InGroup<DiagGroup<"nonportable-include-path-separator">>;
 
 def pp_pragma_once_in_main_file : Warning<"#pragma once in main file">,
   InGroup<DiagGroup<"pragma-once-outside-header">>;

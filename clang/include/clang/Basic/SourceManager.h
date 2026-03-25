@@ -1526,6 +1526,24 @@ public:
     return Filename == "<scratch space>";
   }
 
+  /// Returns whether \p Loc is located in a <module-includes> file.
+  bool isWrittenInModuleIncludes(SourceLocation Loc) const {
+    PresumedLoc Presumed = getPresumedLoc(Loc);
+    if (Presumed.isInvalid())
+      return false;
+    StringRef Filename(Presumed.getFilename());
+    return Filename == "<module-includes>";
+  }
+
+  /// Returns whether \p Loc is located in a <extract-api-includes> file.
+  bool isWrittenInExtractAPIIncludes(SourceLocation Loc) const {
+    PresumedLoc Presumed = getPresumedLoc(Loc);
+    if (Presumed.isInvalid())
+      return false;
+    StringRef Filename(Presumed.getFilename());
+    return Filename == "<extract-api-includes>";
+  }
+
   /// Returns whether \p Loc is located in a built-in or command line source.
   bool isInPredefinedFile(SourceLocation Loc) const {
     PresumedLoc Presumed = getPresumedLoc(Loc);

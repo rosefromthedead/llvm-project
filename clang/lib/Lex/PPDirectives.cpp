@@ -2728,6 +2728,17 @@ Preprocessor::ImportAction Preprocessor::HandleHeaderIncludeOrImport(
       Diag(FilenameTok, DiagId) << Path <<
         FixItHint::CreateReplacement(FilenameRange, Path);
     }
+
+    bool SuppressBackslashDiag = FilenameLoc.isMacroID() ||
+                                 SourceMgr.isWrittenInBuiltinFile(FilenameLoc) ||
+                                 SourceMgr.isWrittenInModuleIncludes(FilenameLoc) ||
+                                 SourceMgr.isWrittenInExtractAPIIncludes(FilenameLoc);
+    if (!SuppressBackslashDiag && Name.contains('\\')) {
+      std::string SuggestedPath = Name.str();
+      std::replace(SuggestedPath.begin(), SuggestedPath.end(), '\\', '/');
+      Diag(FilenameTok, diag::pp_nonportable_path_separator) << Name <<
+        FixItHint::CreateReplacement(FilenameRange, SuggestedPath);
+    }
   }
 
   switch (Action) {
