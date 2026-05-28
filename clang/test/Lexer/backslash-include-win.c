@@ -2,6 +2,8 @@
 // RUN: mkdir -p %t/backslash
 // RUN: cp %S/Inputs/case-insensitive-include.h %t/backslash/case-insensitive-include.h
 // RUN: %clang_cc1 -fsyntax-only -Wnonportable-include-path-separator -I%t %s 2>&1 | FileCheck --check-prefixes=CHECK-ENABLED,CHECK-ALL %s
+// Enabled by default on PS5
+// RUN: %clang_cc1 -fsyntax-only -target x86_64-sie-ps5 -I%t %s 2>&1 | FileCheck --check-prefixes=CHECK-ENABLED,CHECK-ALL %s
 // RUN: %clang_cc1 -fsyntax-only -Wnonportable-include-path -Wno-nonportable-include-path-separator -I%t %s 2>&1 | FileCheck --check-prefix=CHECK-DISABLED,CHECK-ALL %s
 
 #include "backslash\case-insensitive-include.h"
